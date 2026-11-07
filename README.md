@@ -15,24 +15,18 @@
 | 非家庭成员警告 | 信上收件人与家人姓名/别名都对不上 → ⚠️。可一键更正「其实是给某某的」,并自动记为别名。 |
 | 提醒 | 开启提醒的信,在到期前 14 天内出现在「需要处理」区,并标注相关家人。 |
 
-## 部署步骤
+## 部署状态
 
-1. **建 Supabase 项目**(supabase.com,免费档即可)。
-2. **建表**:在 SQL Editor 运行 `supabase/migrations/0001_init.sql`(或 `supabase db push`)。
-3. **Auth 设置**:Authentication → URL Configuration,把 Site URL 和 Redirect URLs 设为你部署后的网址(本地开发加 `http://localhost:5173`)。要用 Google 登录,在 Providers 里启用 Google 并填 OAuth 凭据。
-4. **部署 AI 函数**:
-   ```bash
-   supabase functions deploy analyze-letter
-   supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
-   # 可选:ANTHROPIC_MODEL(默认 claude-sonnet-5-5)、SUMMARY_LANGUAGE(默认 简体中文)
-   ```
-5. **前端**:`cp .env.example .env`,填入项目 URL 和 anon/publishable key。
-   ```bash
-   npm install
-   npm run dev        # 本地开发
-   npm run build      # 产物在 dist/,可部署到 Vercel / Netlify / Cloudflare Pages
-   ```
-6. 手机浏览器打开网址 →「添加到主屏幕」,就是一个 App。
+Supabase 项目 **settle-surat**(`ztsvljnpgkmzspirrrls`,新加坡)已建好:
+- ✅ 数据库表、行级权限、私有文件存储(迁移 `0001_init.sql`、`0002_harden.sql`)
+- ✅ AI 函数 `analyze-letter` 已部署
+- ✅ 前端已内置该项目地址和公开 key(`src/lib/supabase.ts`),部署时无需填环境变量
+- ⬜ `ANTHROPIC_API_KEY`:在 Supabase → Edge Functions → Secrets 添加
+- ⬜ 前端部署到 Vercel(导入本仓库,框架选 Vite,直接 Deploy)
+- ⬜ Supabase → Authentication → URL Configuration:Site URL 填 Vercel 网址,Redirect URLs 加 `https://你的网址/**`
+
+本地开发:`npm install && npm run dev`(要在本地登录,把 `http://localhost:5173/**` 也加进 Redirect URLs)。
+若要连别的 Supabase 项目,复制 `.env.example` 为 `.env` 覆盖即可。
 
 ## 隐私说明
 
@@ -42,6 +36,7 @@
 
 ## 已知限制 / 后续
 
+- Supabase 免费版自带的邮件服务每小时只能发很少几封登录邮件(用于测试)。家人多、登录频繁时,需要在 Authentication → SMTP 接入自己的邮件服务(如 Resend,免费额度足够)。
 - **提醒目前只在 App 内**(「需要处理」区)。尚未做邮件 / 手机推送。下一步可用 Supabase Cron + Edge Function + Resend 每天给「相关家人」发邮件,或做 Web Push。
 - 目前一个账号只属于一个家庭。
 - 不支持旧版 `.doc`(只支持 `.docx`);iPhone 的 HEIC 若浏览器无法解码会提示改用 JPG。
