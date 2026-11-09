@@ -8,6 +8,7 @@ interface AppState {
   family: Family
   me: Member
   members: Member[]
+  isPlatformAdmin: boolean
   refreshMembers: () => Promise<void>
 }
 
@@ -36,7 +37,7 @@ type Loaded =
   | { state: 'loading' }
   | { state: 'no-family' }
   | { state: 'error'; message: string }
-  | { state: 'ok'; family: Family; me: Member; members: Member[] }
+  | { state: 'ok'; family: Family; me: Member; members: Member[]; isPlatformAdmin: boolean }
 
 /** 登录后:先认领邀请 → 找到自己所属家庭 → 加载成员。没有家庭则引导创建。 */
 export function AppProvider({ session, children, fallback }: {
@@ -56,12 +57,15 @@ export function AppProvider({ session, children, fallback }: {
     if (!mine.data?.length) return setLoaded({ state: 'no-family' })
     const me = mine.data[0] as Member
 
-    const [fam, mem] = await Promise.all([
+    const [fam, mem, adm] = await Promise.all([
       supabase.from('families').select('id, name').eq('id', me.family_id).single(),
       supabase.from('members').select('*').eq('family_id', me.family_id).order('created_at'),
+      supabase.rpc('is_platform_admin'),
     ])
     if (fam.error || mem.error) return setLoaded({ state: 'error', message: (fam.error ?? mem.error)!.message })
-    setLoaded({ state: 'ok', family: fam.data as Family, me, members: mem.data as Member[] })
+    setLoaded({
+      state: 'ok', family: fam.data as Family, me, members: mem.data as Member[], isPlatformAdmin: adm.data === true,
+    })
   }, [session.user.id])
 
   useEffect(() => { void load() }, [load])
@@ -79,7 +83,10 @@ export function AppProvider({ session, children, fallback }: {
     return <>{fallback({ state: loaded.state, message: loaded.state === 'error' ? loaded.message : undefined, reload: load })}</>
   }
   return (
-    <Ctx.Provider value={{ session, family: loaded.family, me: loaded.me, members: loaded.members, refreshMembers }}>
+    <Ctx.Provider value={{
+      session, family: loaded.family, me: loaded.me, members: loaded.members,
+      isPlatformAdmin: loaded.isPlatformAdmin, refreshMembers,
+    }}>
       {children}
     </Ctx.Provider>
   )

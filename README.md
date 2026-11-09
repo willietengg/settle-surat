@@ -2,6 +2,16 @@
 
 拍照或上传家里的信(照片 / PDF / Word),AI 自动读出重点,整理成列表;收件人不是家庭成员会显示 ⚠️ 警告。
 
+## 多家庭怎么用
+
+所有家庭用**同一个网址**,数据按家庭严格隔离(数据库行级权限)。
+
+- **平台管理员**(`private.platform_admins`,目前是 willietengfx@gmail.com):App 里多一个「管理」页,可生成开通码、看各家庭本月用量、调整每月上限、停用家庭。
+- **新家庭**:家长打开网址 → 邮箱登录 → 输入开通码 → 创建家庭。每个码只能用一次。没有码的人能登录,但建不了家庭、用不到 AI(不产生费用)。
+- **家人**:家长在「家人」页添加对方邮箱 → 对方收到登录邮件 → 点开自动进入该家庭,不需要码。
+- **额度**:每家每月默认 100 次 AI 分析(重新分析也计数,删除信件不退额度),每月 1 日(UTC)重置。用完后提示,不再调用 AI。
+- **以后收费**:`families.plan`(trial/free/paid/suspended)和 `monthly_limit` 已预留,接 Stripe 时由付款回调更新即可。
+
 ## 功能
 
 | 需求 | 做法 |
@@ -20,7 +30,7 @@
 Supabase 项目 **settle-surat**(`ztsvljnpgkmzspirrrls`,新加坡)已建好:
 - ✅ 数据库表、行级权限、私有文件存储(迁移 `0001_init.sql`、`0002_harden.sql`)
 - ✅ AI 函数 `analyze-letter` 已部署
-- ✅ 仅限邀请(`0003_invite_only.sql`):只有 `private.signup_allowlist` 里的邮箱(创建者)和被家庭管理员添加过的邮箱能注册,陌生人拿到网址也进不来
+- ✅ 多家庭平台(`0004_multi_family.sql`):开通码 + 每家每月 100 封额度 + 平台管理页
 - ✅ 前端已内置该项目地址和公开 key(`src/lib/supabase.ts`),部署时无需填环境变量
 - ⬜ `ANTHROPIC_API_KEY`:在 Supabase → Edge Functions → Secrets 添加
 - ⬜ 前端部署到 Vercel(导入本仓库,框架选 Vite,直接 Deploy)

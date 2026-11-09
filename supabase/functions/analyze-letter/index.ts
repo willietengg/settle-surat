@@ -117,6 +117,11 @@ Deno.serve(async (req) => {
     return json({ error: message }, status)
   }
 
+  // 每月额度:先原子地占用一次,用完 / 家庭被停用则不调用 AI(重新分析也算一次,因为同样产生费用)
+  const { data: allowed, error: quotaErr } = await supabase.rpc('consume_analysis_quota', { fid: letter.family_id })
+  if (quotaErr) return await fail(`额度检查失败:${quotaErr.message}`)
+  if (!allowed) return await fail('本月 AI 分析额度已用完,下个月 1 日自动恢复。如需更多额度请联系管理员。', 429)
+
   await supabase.from('letters').update({ status: 'processing', error: null }).eq('id', letterId)
 
   try {

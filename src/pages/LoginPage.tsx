@@ -1,11 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 
-// 仅限邀请:未被邀请的邮箱在数据库层被拒绝,Supabase 返回 "Database error saving new user"
 function friendly(msg: string): string {
-  if (/database error|not_invited|signup/i.test(msg)) {
-    return '这个邮箱还没有被邀请。请让家人在 App 的「家人」页面先添加你的邮箱,再来登录。'
-  }
   if (/rate limit/i.test(msg)) return '发送太频繁了,请过几分钟再试。'
   return msg
 }
@@ -57,7 +53,10 @@ export default function LoginPage() {
         <button className="secondary" onClick={google}>使用 Google 登录</button>
       </>)}
       {err && <p className="error">{err}</p>}
-      <p className="muted small">仅限受邀家人使用。请用家人帮你登记的那个邮箱登录,会自动加入家庭。</p>
+      <p className="muted small">
+        被家人邀请:用家人帮你登记的邮箱登录,会自动加入。<br />
+        新家庭:登录后输入开通码即可创建自己的家庭。
+      </p>
     </div>
   )
 }

@@ -7,9 +7,10 @@ import LettersPage from './pages/LettersPage'
 import UploadPage from './pages/UploadPage'
 import LetterDetailPage from './pages/LetterDetailPage'
 import MembersPage from './pages/MembersPage'
+import AdminPage from './pages/AdminPage'
 
 function Shell() {
-  const { family } = useApp()
+  const { family, isPlatformAdmin } = useApp()
   return (
     <div className="shell">
       <header className="topbar">
@@ -17,6 +18,7 @@ function Shell() {
         <nav>
           <NavLink to="/" end>信件</NavLink>
           <NavLink to="/members">家人</NavLink>
+          {isPlatformAdmin && <NavLink to="/admin">管理</NavLink>}
           <button className="link" onClick={() => supabase.auth.signOut()}>退出</button>
         </nav>
       </header>
@@ -26,6 +28,7 @@ function Shell() {
           <Route path="/upload" element={<UploadPage />} />
           <Route path="/letters/:id" element={<LetterDetailPage />} />
           <Route path="/members" element={<MembersPage />} />
+          {isPlatformAdmin && <Route path="/admin" element={<AdminPage />} />}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

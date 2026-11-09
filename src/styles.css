@@ -108,3 +108,7 @@ td.overdue { color: var(--danger); font-weight: 600; }
   .letters .main { max-width: none; padding-right: 44px; }
   .facts { grid-template-columns: 1fr; gap: 0; } .facts dt { margin-top: 8px; font-size: .85rem; }
 }
+.bigcode { font-size: 1.2rem; letter-spacing: .08em; padding: 4px 10px; }
+details summary { cursor: pointer; padding: 4px 0; }
+table.admin td input, table.admin td select { min-height: 36px; padding: 4px 8px; }
+@media (max-width: 520px) { .center.card { margin-left: 16px; margin-right: 16px; } }

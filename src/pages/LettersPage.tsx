@@ -16,6 +16,7 @@ export default function LettersPage() {
   const [onlyMine, setOnlyMine] = useState(false)
   const [hideDone, setHideDone] = useState(true)
   const [q, setQ] = useState('')
+  const [usage, setUsage] = useState<{ used: number; monthly_limit: number; plan: string } | null>(null)
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.from('letters').select('*')
@@ -23,6 +24,8 @@ export default function LettersPage() {
     if (error) { setErr(error.message); setLoading(false); return }
     const rows = data as Letter[]
     setLetters(rows)
+    const u = await supabase.rpc('get_family_usage', { fid: family.id })
+    if (!u.error && u.data?.length) setUsage(u.data[0])
     const ids = rows.map((r) => r.id)
     if (ids.length) {
       const lr = await supabase.from('letter_recipients').select('letter_id, member_id').in('letter_id', ids)
@@ -76,6 +79,13 @@ export default function LettersPage() {
         <h2>信件</h2>
         <Link to="/upload" className="btn">＋ 添加信件</Link>
       </div>
+      {usage && (
+        <p className={`small ${usage.used >= usage.monthly_limit || usage.plan === 'suspended' ? 'error' : 'muted'}`}>
+          {usage.plan === 'suspended'
+            ? '此家庭的 AI 分析已暂停,请联系管理员。'
+            : `本月 AI 分析:${usage.used} / ${usage.monthly_limit} 封${usage.used >= usage.monthly_limit ? '(已用完,下月 1 日恢复)' : ''}`}
+        </p>
+      )}
 
       {alerts.length > 0 && (
         <section className="card alertbox">
