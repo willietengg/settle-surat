@@ -5,6 +5,9 @@
 const TITLES = new Set([
   'mr', 'mrs', 'ms', 'miss', 'mx', 'dr', 'prof', 'sir', 'madam', 'mdm', 'mister',
   'shri', 'smt', 'sri', 'estate', 'of', 'the', 'late',
+  // 马来西亚常见称谓(注意不能去掉 "tan":它也是常见姓氏;Tan Sri 里的 tan 留着不影响子集匹配)
+  'encik', 'en', 'puan', 'pn', 'cik', 'tuan', 'dato', 'datin', 'datuk', 'haji', 'hj', 'hajah', 'hjh',
+  'yb', 'yab', 'ybhg', 'tun', 'toh', 'puteri',
 ])
 
 export interface MemberLike {

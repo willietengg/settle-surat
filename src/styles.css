@@ -112,3 +112,49 @@ td.overdue { color: var(--danger); font-weight: 600; }
 details summary { cursor: pointer; padding: 4px 0; }
 table.admin td input, table.admin td select { min-height: 36px; padding: 4px 8px; }
 @media (max-width: 520px) { .center.card { margin-left: 16px; margin-right: 16px; } }
+
+/* ── 语言选择 / 导航 ── */
+.langsel { width: auto; min-height: 32px; padding: 2px 6px; font-size: .85rem; }
+.topbar nav { flex-wrap: wrap; justify-content: flex-end; }
+.hints { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+textarea { font: inherit; color: inherit; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; width: 100%; resize: vertical; }
+.row.tight { gap: 6px; display: inline-flex; align-items: center; }
+
+/* ── 称谓 + 全名 ── */
+.name-row { align-items: flex-end; }
+.title-col { width: 120px; flex: none; }
+
+/* ── 分页 ── */
+.tabs { display: flex; gap: 4px; background: var(--line); padding: 4px; border-radius: 10px; width: fit-content; }
+.tabs a { padding: 8px 18px; border-radius: 8px; color: var(--text); }
+.tabs a.active { background: var(--card); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+
+/* ── 成员列表 ── */
+.member-head, .member-row { display: grid; grid-template-columns: 110px 1.3fr 1.3fr 1fr; gap: 10px; align-items: center; }
+.member-row { padding: 10px 0; border-top: 1px solid var(--line); }
+.member-row.declined { background: color-mix(in srgb, var(--danger) 6%, transparent); border-radius: 8px; padding: 10px 6px; }
+.member-row input, .member-row select { min-height: 38px; padding: 6px 8px; }
+.member-actions { grid-column: 1 / -1; gap: 12px; }
+.email-ro { overflow-wrap: anywhere; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: .8rem; font-weight: 600; }
+.badge .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.st-verified { color: #1a7f37; background: #dafbe1; }
+.st-pending { color: #b35900; background: #fff1e0; }
+.st-declined { color: #c62828; background: #ffe2e0; }
+
+/* ── 地址 ── */
+.addr-row { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; border-top: 1px solid var(--line); }
+.addr-row select, .addr-row input { width: auto; min-height: 36px; padding: 4px 8px; }
+.card.highlight { border-color: var(--brand); box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand) 25%, transparent); }
+.addr-home { background: #dcebff; color: #124a99; } .addr-work { background: #efe3ff; color: #5b2a99; }
+.addr-school { background: #fff3c4; color: #7a5a00; } .addr-custom { background: #e2f5ec; color: #1d6b48; }
+.addr-new { background: #fff1e0; color: #b35900; }
+
+@media (max-width: 720px) {
+  .member-head { display: none; }
+  .member-row { grid-template-columns: 1fr; gap: 6px; }
+  .title-col { width: 96px; }
+}
+.member-actions details { order: 3; flex: 1 1 100%; }
+.member-actions details input { margin-top: 6px; }
+.letters td[data-label] .nowrap, .nowrap { white-space: nowrap; }

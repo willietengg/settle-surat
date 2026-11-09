@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
+import { LangSwitcher, useI18n, type T } from '../lib/i18n'
 
-function friendly(msg: string): string {
-  if (/rate limit/i.test(msg)) return '发送太频繁了,请过几分钟再试。'
+function friendly(t: T, msg: string): string {
+  if (/rate limit|too many/i.test(msg)) return t('login.rateLimited')
   return msg
 }
 
@@ -10,6 +11,7 @@ function friendly(msg: string): string {
 const GOOGLE_ENABLED = import.meta.env.VITE_ENABLE_GOOGLE === 'true'
 
 export default function LoginPage() {
+  const { t } = useI18n()
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [err, setErr] = useState('')
@@ -23,40 +25,44 @@ export default function LoginPage() {
       options: { emailRedirectTo: window.location.origin },
     })
     setBusy(false)
-    if (error) setErr(friendly(error.message)); else setSent(true)
+    if (error) setErr(friendly(t, error.message)); else setSent(true)
   }
 
   async function google() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google', options: { redirectTo: window.location.origin },
     })
-    if (error) setErr(friendly(error.message))
+    if (error) setErr(friendly(t, error.message))
   }
 
   return (
     <div className="center card narrow">
-      <h1>📬 家庭信件管家</h1>
-      <p className="muted">拍照或上传家里的信,自动整理重点。只有你们家的成员能看到内容。</p>
+      <div className="row between"><h1>📬 {t('app.name')}</h1><LangSwitcher /></div>
+      <p className="muted">{t('app.tagline')}</p>
       {sent ? (
-        <p>✅ 登录链接已发到 <b>{email}</b>,请在这台手机上打开邮件并点击链接。</p>
+        <div className="stack">
+          <p className="summary">✅ {t('login.sent', { email })}</p>
+          <button className="link" onClick={() => setSent(false)}>{t('login.useOther')}</button>
+        </div>
       ) : (
         <form onSubmit={sendLink} className="stack">
-          <label>邮箱
+          <label>{t('login.email')}
             <input type="email" required autoComplete="email" value={email}
-              onChange={(e) => setEmail(e.target.value)} placeholder="you@gmail.com" />
+              onChange={(e) => setEmail(e.target.value)} placeholder="name@gmail.com" />
           </label>
-          <button disabled={busy}>{busy ? '发送中…' : '发送登录链接'}</button>
+          <button disabled={busy}>{busy ? t('login.sending') : t('login.send')}</button>
+          <p className="muted small">{t('login.noPassword')}</p>
         </form>
       )}
       {GOOGLE_ENABLED && (<>
-        <div className="divider">或</div>
-        <button className="secondary" onClick={google}>使用 Google 登录</button>
+        <div className="divider">{t('login.or')}</div>
+        <button className="secondary" onClick={google}>{t('login.google')}</button>
       </>)}
       {err && <p className="error">{err}</p>}
-      <p className="muted small">
-        被家人邀请:用家人帮你登记的邮箱登录,会自动加入。<br />
-        新家庭:登录后输入开通码即可创建自己的家庭。
-      </p>
+      <ul className="hints small muted">
+        <li>{t('login.invitedHint')}</li>
+        <li>{t('login.newHint')}</li>
+      </ul>
     </div>
   )
 }

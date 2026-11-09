@@ -1,24 +1,27 @@
-import type { Category } from './types'
+import type { Address, Category, Letter } from './types'
+import { LOCALE, type Lang, type T } from './i18n'
 
-export const CATEGORY_LABEL: Record<Category, string> = {
-  info: '通知',
-  payment: '付款',
-  government: '政府/税务',
-  legal: '法律',
-  medical: '医疗',
-  bank: '银行',
-  insurance: '保险',
-  marketing: '广告',
-  personal: '私人',
-  other: '其他',
+export const CATEGORIES: Category[] = [
+  'info', 'payment', 'government', 'legal', 'medical', 'bank', 'insurance', 'marketing', 'personal', 'other',
+]
+
+export const catLabel = (t: T, c: Category) => t(`cat.${c}`)
+
+export function addressLabel(t: T, a: Pick<Address, 'kind' | 'custom_label'>): string {
+  return a.kind === 'custom' ? (a.custom_label?.trim() || t('kind.custom')) : t(`kind.${a.kind}`)
 }
 
-export const CATEGORIES = Object.keys(CATEGORY_LABEL) as Category[]
+export function letterTitle(t: T, lang: Lang, l: Letter): string {
+  return l.title_i18n?.[lang] || l.title || t('letter.untitled')
+}
+export function letterSummary(lang: Lang, l: Letter): string {
+  return l.summary_i18n?.[lang] || l.summary || ''
+}
 
-export function formatMoney(amount: number | null, currency: string | null): string {
+export function formatMoney(lang: Lang, amount: number | null, currency: string | null): string {
   if (amount == null) return ''
   try {
-    return new Intl.NumberFormat(undefined, { style: 'currency', currency: currency || 'USD' }).format(amount)
+    return new Intl.NumberFormat(LOCALE[lang], { style: 'currency', currency: currency || 'MYR' }).format(amount)
   } catch {
     return `${currency ?? ''} ${amount.toFixed(2)}`.trim()
   }
@@ -34,10 +37,10 @@ export function daysUntil(due: string | null, now = new Date()): number | null {
   return Math.round((target - today) / 86_400_000)
 }
 
-export function dueLabel(due: string | null): string {
+export function dueLabel(t: T, due: string | null): string {
   const n = daysUntil(due)
   if (n == null) return ''
-  if (n < 0) return `已逾期 ${-n} 天`
-  if (n === 0) return '今天到期'
-  return `${n} 天后到期`
+  if (n < 0) return t('due.overdue', { n: -n })
+  if (n === 0) return t('due.today')
+  return t('due.inDays', { n })
 }

@@ -1,13 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './lib/supabase'
-import type { Family, Member } from './lib/types'
+import type { Family, Invitation, Member } from './lib/types'
 
 interface AppState {
   session: Session
   family: Family
   me: Member
   members: Member[]
+  isHost: boolean
   isPlatformAdmin: boolean
   refreshMembers: () => Promise<void>
 }
@@ -33,28 +34,33 @@ export function useSession() {
   return { session, ready }
 }
 
-type Loaded =
+export type Gate =
   | { state: 'loading' }
   | { state: 'no-family' }
+  | { state: 'invited'; invitations: Invitation[] }
   | { state: 'error'; message: string }
-  | { state: 'ok'; family: Family; me: Member; members: Member[]; isPlatformAdmin: boolean }
 
-/** 登录后:先认领邀请 → 找到自己所属家庭 → 加载成员。没有家庭则引导创建。 */
+type Loaded = Gate | { state: 'ok'; family: Family; me: Member; members: Member[]; isPlatformAdmin: boolean }
+
+/** 登录后:有家庭 → 进入;没有家庭但有邀请 → 显示邀请;都没有 → 创建家庭。 */
 export function AppProvider({ session, children, fallback }: {
   session: Session
   children: ReactNode
-  fallback: (s: { state: 'loading' | 'no-family' | 'error'; message?: string; reload: () => void }) => ReactNode
+  fallback: (g: Gate, reload: () => void) => ReactNode
 }) {
   const [loaded, setLoaded] = useState<Loaded>({ state: 'loading' })
 
   const load = useCallback(async () => {
     setLoaded({ state: 'loading' })
-    const claim = await supabase.rpc('claim_membership')
-    if (claim.error) return setLoaded({ state: 'error', message: claim.error.message })
-
     const mine = await supabase.from('members').select('*').eq('user_id', session.user.id).order('created_at').limit(1)
     if (mine.error) return setLoaded({ state: 'error', message: mine.error.message })
-    if (!mine.data?.length) return setLoaded({ state: 'no-family' })
+
+    if (!mine.data?.length) {
+      const inv = await supabase.rpc('my_invitations')
+      if (inv.error) return setLoaded({ state: 'error', message: inv.error.message })
+      const invitations = (inv.data ?? []) as Invitation[]
+      return setLoaded(invitations.length ? { state: 'invited', invitations } : { state: 'no-family' })
+    }
     const me = mine.data[0] as Member
 
     const [fam, mem, adm] = await Promise.all([
@@ -79,13 +85,11 @@ export function AppProvider({ session, children, fallback }: {
     }
   }, [loaded])
 
-  if (loaded.state !== 'ok') {
-    return <>{fallback({ state: loaded.state, message: loaded.state === 'error' ? loaded.message : undefined, reload: load })}</>
-  }
+  if (loaded.state !== 'ok') return <>{fallback(loaded, () => void load())}</>
   return (
     <Ctx.Provider value={{
       session, family: loaded.family, me: loaded.me, members: loaded.members,
-      isPlatformAdmin: loaded.isPlatformAdmin, refreshMembers,
+      isHost: loaded.me.role === 'admin', isPlatformAdmin: loaded.isPlatformAdmin, refreshMembers,
     }}>
       {children}
     </Ctx.Provider>

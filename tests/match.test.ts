@@ -26,6 +26,14 @@ describe('namesMatch', () => {
     expect(namesMatch('陈大文先生', '陈大文')).toBe(true)
     expect(namesMatch('陈小明', '陈大文')).toBe(false)
   })
+  it('马来西亚称谓与 bin / a/l', () => {
+    expect(namesMatch("DATO' AHMAD BIN ALI", 'Ahmad bin Ali')).toBe(true)
+    expect(namesMatch('Encik Ahmad Ali', 'Ahmad bin Ali')).toBe(true)
+    expect(namesMatch('Tan Sri Lim Ah Kow', 'Lim Ah Kow')).toBe(true)
+    expect(namesMatch('Muthu a/l Raju', 'Muthu Raju')).toBe(true)
+    expect(namesMatch('Tan Mei Ling', 'Mei Ling Tan')).toBe(true) // Tan 是姓,不能被当成称谓去掉
+    expect(namesMatch('Tan Mei Ling', 'Lim Mei Ling')).toBe(false)
+  })
   it('空值', () => {
     expect(namesMatch('', 'Willie Teng')).toBe(false)
   })

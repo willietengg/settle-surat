@@ -1,5 +1,13 @@
 import { supabase } from './supabase'
 import type { LetterFile } from './types'
+import type { Key } from './i18n'
+
+/** 带翻译键的错误,由界面按当前语言显示 */
+export class AppError extends Error {
+  constructor(public key: Key, public vars: Record<string, string | number> = {}) {
+    super(key)
+  }
+}
 
 const MAX_EDGE = 2000       // 手机照片缩到最长边 2000px,清晰度足够读字,体积小很多
 const JPEG_QUALITY = 0.85
@@ -34,7 +42,7 @@ export async function compressImage(file: File): Promise<File> {
   ctx.drawImage(bitmap, 0, 0, w, h)
   bitmap.close()
   const blob: Blob = await new Promise((res, rej) =>
-    canvas.toBlob((b) => (b ? res(b) : rej(new Error('图片转换失败'))), 'image/jpeg', JPEG_QUALITY),
+    canvas.toBlob((b) => (b ? res(b) : rej(new Error('toBlob failed'))), 'image/jpeg', JPEG_QUALITY),
   )
   const base = file.name.replace(/\.[^.]+$/, '') || 'photo'
   return new File([blob], `${base}.jpg`, { type: 'image/jpeg' })
@@ -58,10 +66,10 @@ export async function prepare(files: File[]): Promise<Prepared> {
   const texts: string[] = []
   for (const f of files) {
     const kind = kindOf(f)
-    if (kind === 'unsupported') throw new Error(`不支持的文件类型:${f.name}(支持照片、PDF、.docx)`)
+    if (kind === 'unsupported') throw new AppError('err.unsupported', { name: f.name })
     if (kind === 'image') {
       const out = await compressImage(f).catch(() => {
-        throw new Error(`无法读取图片 ${f.name}。如果是 HEIC,请在相机设置里改为「最兼容」或先转成 JPG。`)
+        throw new AppError('err.image', { name: f.name })
       })
       uploads.push({ file: out, mime: out.type, name: out.name })
     } else if (kind === 'pdf') {
@@ -76,7 +84,7 @@ export async function prepare(files: File[]): Promise<Prepared> {
     }
   }
   for (const u of uploads) {
-    if (u.file.size > MAX_UPLOAD_BYTES) throw new Error(`${u.name} 超过 20MB`)
+    if (u.file.size > MAX_UPLOAD_BYTES) throw new AppError('err.tooLarge', { name: u.name })
   }
   return { uploads, extraText: texts.join('\n\n---\n\n') }
 }
@@ -93,7 +101,7 @@ export async function uploadFiles(
     const { error } = await supabase.storage.from('letters').upload(path, u.file, {
       contentType: u.mime, upsert: false,
     })
-    if (error) throw new Error(`上传失败:${error.message}`)
+    if (error) throw new AppError('err.upload', { msg: error.message })
     out.push({ path, mime: u.mime, name: u.name })
   }
   return out
@@ -113,8 +121,14 @@ export async function docxTextFromStorage(files: LetterFile[]): Promise<string> 
   for (const f of files) {
     if (f.mime !== DOCX) continue
     const { data, error } = await supabase.storage.from('letters').download(f.path)
-    if (error || !data) throw new Error(`无法读取 ${f.name ?? f.path}`)
+    if (error || !data) throw new AppError('err.readFile', { name: f.name ?? f.path })
     texts.push(await extractDocxText(new File([data], f.name ?? 'doc.docx')))
   }
   return texts.join('\n\n---\n\n')
+}
+
+/** 任意异常 → 当前语言的提示 */
+export function errorMessage(t: (k: Key, v?: Record<string, string | number>) => string, e: unknown): string {
+  if (e instanceof AppError) return t(e.key, e.vars)
+  return e instanceof Error ? e.message : String(e)
 }
