@@ -74,7 +74,7 @@ export default function AdminPage() {
 
   return (
     <div className="stack">
-      <h2>{t('admin.title')}</h2>
+      <h1 className="display">{t('admin.title')}</h1>
       {err && <p className="error">{err}</p>}
 
       <section className="card stack">

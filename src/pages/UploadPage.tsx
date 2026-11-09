@@ -4,6 +4,8 @@ import { useApp } from '../context'
 import { supabase } from '../lib/supabase'
 import { useI18n } from '../lib/i18n'
 import { ACCEPT, AppError, errorMessage, kindOf, prepare, uploadFiles } from '../lib/files'
+import { IconCamera, IconClip } from '../components/Icons'
+import { Link } from 'react-router-dom'
 
 export default function UploadPage() {
   const { family } = useApp()
@@ -66,11 +68,13 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="card stack">
-      <h2>{t('upload.title')}</h2>
-      <div className="row wrap">
-        <button onClick={() => cameraRef.current?.click()}>{t('upload.camera')}</button>
-        <button className="secondary" onClick={() => pickRef.current?.click()}>{t('upload.pick')}</button>
+    <div className="stack gap-lg">
+      <Link to="/" className="backlink">{t('detail.back')}</Link>
+      <h1 className="display">{t('upload.title')}</h1>
+      <div className="card stack">
+      <div className="pick-grid">
+        <button className="pick-tile primary-tile" onClick={() => cameraRef.current?.click()}><IconCamera width={30} height={30} /><span>{t('upload.camera')}</span></button>
+        <button className="pick-tile" onClick={() => pickRef.current?.click()}><IconClip width={30} height={30} /><span>{t('upload.pick')}</span></button>
       </div>
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden
         onChange={(e) => { add(e.target.files); e.target.value = '' }} />
@@ -81,7 +85,7 @@ export default function UploadPage() {
         <>
           <ul className="filelist">
             {files.map((f, i) => (
-              <li key={i}>
+              <li key={i} className="appear" style={{ ['--i' as string]: i }}>
                 {previews[i] ? <img src={previews[i]!} alt="" /> : <span className="doc">{kindOf(f) === 'pdf' ? 'PDF' : 'DOC'}</span>}
                 <span className="grow ellipsis">{f.name}</span>
                 <button className="link" onClick={() => setFiles((c) => c.filter((_, j) => j !== i))}>{t('common.remove')}</button>
@@ -100,6 +104,7 @@ export default function UploadPage() {
       )}
       {err && <p className="error">{err}</p>}
       <p className="muted small">{t('upload.privacy')}</p>
+      </div>
     </div>
   )
 }

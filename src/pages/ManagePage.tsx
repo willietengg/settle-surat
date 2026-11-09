@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { NavLink, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
+import { PillNav } from '../components/PillNav'
 import { useApp } from '../context'
 import { supabase } from '../lib/supabase'
 import { TITLES, useI18n, type T } from '../lib/i18n'
@@ -10,12 +11,12 @@ export default function ManagePage({ tab }: { tab: 'family' | 'address' }) {
   const { t } = useI18n()
   return (
     <div className="stack">
-      <h2>{t('manage.title')}</h2>
-      <div className="tabs">
-        <NavLink to="/manage" end>{t('tab.family')}</NavLink>
-        <NavLink to="/manage/address">{t('tab.address')}</NavLink>
-      </div>
-      {tab === 'family' ? <FamilyTab /> : <AddressTab />}
+      <h1 className="display">{t('manage.title')}</h1>
+      <PillNav className="segmented" items={[
+        { to: '/manage', end: true, label: t('tab.family') },
+        { to: '/manage/address', label: t('tab.address') },
+      ]} />
+      <div key={tab} className="tab-panel">{tab === 'family' ? <FamilyTab /> : <AddressTab />}</div>
     </div>
   )
 }

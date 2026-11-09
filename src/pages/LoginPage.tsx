@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { LangSwitcher, useI18n, type T } from '../lib/i18n'
+import { IconMail } from '../components/Icons'
 
 function friendly(t: T, msg: string): string {
   if (/rate limit|too many/i.test(msg)) return t('login.rateLimited')
@@ -36,9 +37,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="center card narrow">
-      <div className="row between"><h1>📬 {t('app.name')}</h1><LangSwitcher /></div>
-      <p className="muted">{t('app.tagline')}</p>
+    <div className="auth">
+    <div className="auth-lang"><LangSwitcher /></div>
+    <div className="auth-hero appear" style={{ ['--i' as string]: 0 }}>
+      <div className="app-icon" aria-hidden><IconMail width={34} height={34} strokeWidth={1.6} /></div>
+      <h1 className="display">{t('app.name')}</h1>
+      <p className="muted lead">{t('app.tagline')}</p>
+    </div>
+    <div className="card narrow appear" style={{ ['--i' as string]: 1 }}>
       {sent ? (
         <div className="stack">
           <p className="summary">✅ {t('login.sent', { email })}</p>
@@ -59,7 +65,8 @@ export default function LoginPage() {
         <button className="secondary" onClick={google}>{t('login.google')}</button>
       </>)}
       {err && <p className="error">{err}</p>}
-      <ul className="hints small muted">
+    </div>
+      <ul className="hints small muted appear" style={{ ['--i' as string]: 2 }}>
         <li>{t('login.invitedHint')}</li>
         <li>{t('login.newHint')}</li>
       </ul>

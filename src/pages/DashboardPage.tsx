@@ -8,16 +8,19 @@ import {
   addressLabel, CATEGORIES, catLabel, daysUntil, dueLabel, formatMoney, letterSummary, letterTitle,
 } from '../lib/labels'
 import { findAddress } from '../lib/address'
+import { Switch } from '../components/Switch'
+import { SkeletonList } from '../components/Skeleton'
+import { IconPin, IconPlus } from '../components/Icons'
 
 /** 地址标签:已登记 → Home/Work…;未登记 → "New address" + 添加按钮 */
 export function AddressTag({ address, saved }: { address: string | null; saved: Address[] }) {
   const { t } = useI18n()
   if (!address) return null
   const hit = findAddress(address, saved)
-  if (hit) return <span className={`chip addr-${hit.kind}`}>📍 {addressLabel(t, hit)}</span>
+  if (hit) return <span className={`chip addr-${hit.kind}`}><IconPin /> {addressLabel(t, hit)}</span>
   return (
     <span className="row tight">
-      <span className="chip addr-new">📍 {t('addr.new')}</span>
+      <span className="chip addr-new"><IconPin /> {t('addr.new')}</span>
       <Link className="small" to={`/manage/address?add=${encodeURIComponent(address)}`}>{t('addr.addThis')}</Link>
     </span>
   )
@@ -102,32 +105,48 @@ export default function DashboardPage() {
   })
 
   const full = usage && (usage.used >= usage.monthly_limit || usage.plan === 'suspended')
+  const hour = new Date().getHours()
+  const greetKey = hour < 12 ? 'greet.morning' : hour < 18 ? 'greet.afternoon' : 'greet.evening'
+  const firstName = me.display_name.split(/\s+/)[0]
 
   return (
-    <div className="stack">
-      <div className="row between">
-        <h2>{t('nav.dashboard')}</h2>
-        <Link to="/upload" className="btn">{t('dash.add')}</Link>
-      </div>
-      {usage && (
-        <p className={`small ${full ? 'error' : 'muted'}`}>
-          {usage.plan === 'suspended' ? t('dash.suspended')
-            : <>{t('dash.usage', { used: usage.used, limit: usage.monthly_limit })}{full && ` — ${t('dash.usageFull')}`}</>}
-        </p>
-      )}
+    <div className="stack gap-lg">
+      <header className="page-head">
+        <div className="stack gap-xs">
+          <h1 className="display">{t(greetKey, { name: firstName })}</h1>
+          {usage && (usage.plan === 'suspended'
+            ? <p className="small error">{t('dash.suspended')}</p>
+            : (
+              <div className="usage" title={t('dash.usage', { used: usage.used, limit: usage.monthly_limit })}>
+                <div className="usage-bar"><span style={{ transform: `scaleX(${Math.min(1, usage.used / Math.max(1, usage.monthly_limit))})` }} data-full={!!full} /></div>
+                <span className={`small ${full ? 'error' : 'muted'}`}>
+                  {t('dash.usageShort', { used: usage.used, limit: usage.monthly_limit })}{full && ` — ${t('dash.usageFull')}`}
+                </span>
+              </div>
+            ))}
+        </div>
+        <Link to="/upload" className="btn btn-cta"><IconPlus />{t('dash.add')}</Link>
+      </header>
 
       {alerts.length > 0 && (
         <section className="card alertbox">
-          <h3>⏰ {t('dash.attention')}</h3>
-          <ul>
-            {alerts.map((l) => {
+          <h3>{t('dash.attention')}</h3>
+          <ul className="attention">
+            {alerts.map((l, i) => {
               const n = daysUntil(l.due_date)!
               return (
-                <li key={l.id} className={n < 0 ? 'overdue' : n <= 3 ? 'soon' : ''}>
-                  <Link to={`/letters/${l.id}`}>{letterTitle(t, lang, l)}</Link>
-                  <span> · {dueLabel(t, l.due_date)}</span>
-                  {l.amount_due != null && <span> · {formatMoney(lang, l.amount_due, l.currency)}</span>}
-                  <span className="muted"> · {(recips[l.id] ?? []).map(memberName).join(', ') || t('dash.everyone')}</span>
+                <li key={l.id} className={`appear ${n < 0 ? 'overdue' : n <= 3 ? 'soon' : ''}`} style={{ ['--i' as string]: i }}>
+                  <Link to={`/letters/${l.id}`} className="attention-row">
+                    <span className="dot-status" />
+                    <span className="grow">
+                      <b>{letterTitle(t, lang, l)}</b>
+                      <span className="muted small"> · {(recips[l.id] ?? []).map(memberName).join(', ') || t('dash.everyone')}</span>
+                    </span>
+                    <span className="attention-due">
+                      {dueLabel(t, l.due_date)}
+                      {l.amount_due != null && <span className="muted"> · {formatMoney(lang, l.amount_due, l.currency)}</span>}
+                    </span>
+                  </Link>
                 </li>
               )
             })}
@@ -152,30 +171,30 @@ export default function DashboardPage() {
       </div>
 
       {err && <p className="error">{err}</p>}
-      {loading ? <p className="muted">{t('common.loading')}</p> : shown.length === 0 ? (
-        <div className="card center muted">{letters.length ? t('dash.noMatch') : t('dash.empty')}</div>
+      {loading ? <SkeletonList /> : shown.length === 0 ? (
+        <div className="card empty muted">{letters.length ? t('dash.noMatch') : t('dash.empty')}</div>
       ) : (
         <table className="letters">
           <thead>
             <tr><th></th><th>{t('col.letter')}</th><th>{t('col.recipient')}</th><th>{t('col.category')}</th><th>{t('col.due')}</th><th>{t('col.alert')}</th></tr>
           </thead>
           <tbody>
-            {shown.map((l) => {
+            {shown.map((l, i) => {
               const warn = l.status === 'done' && l.recipient_is_family === false
               const n = daysUntil(l.due_date)
               return (
-                <tr key={l.id} className={`${l.is_done ? 'done' : ''} ${warn ? 'warnrow' : ''}`}>
+                <tr key={l.id} className={`appear ${l.is_done ? 'done' : ''} ${warn ? 'warnrow' : ''}`} style={{ ['--i' as string]: Math.min(i, 10) }}>
                   <td data-label="">
-                    <button className={`star ${l.is_important ? 'on' : ''}`} aria-label={t('letter.markImportant')}
+                    <button className={`star ${l.is_important ? 'on' : ''}`} aria-label={t('letter.markImportant')} aria-pressed={l.is_important}
                       onClick={() => patch(l.id, { is_important: !l.is_important })}>
-                      {l.is_important ? '★' : '☆'}
+                      <span key={String(l.is_important)} className="star-glyph">{l.is_important ? '★' : '☆'}</span>
                     </button>
                   </td>
                   <td data-label={t('col.letter')} className="main">
                     <Link to={`/letters/${l.id}`} className="title">
                       {(warn || l.is_suspicious) && <span className="warn" title={t('warn.notFamily')}>⚠️ </span>}
                       {l.status === 'done' ? letterTitle(t, lang, l)
-                        : l.status === 'failed' ? t('letter.failed') : t('letter.analyzing')}
+                        : l.status === 'failed' ? t('letter.failed') : <span className="shimmer-text">{t('letter.analyzing')}</span>}
                     </Link>
                     <div className="muted small">{l.sender}</div>
                     <div className="small">
@@ -194,10 +213,7 @@ export default function DashboardPage() {
                     {l.amount_due != null && <div className="small">{formatMoney(lang, l.amount_due, l.currency)}</div>}
                   </td>
                   <td data-label={t('col.alert')}>
-                    <label className="switch" title={t('letter.alertHint')}>
-                      <input type="checkbox" checked={l.alert_enabled} onChange={(e) => patch(l.id, { alert_enabled: e.target.checked })} />
-                      <span />
-                    </label>
+                    <Switch checked={l.alert_enabled} label={t('letter.alertHint')} onChange={(v) => patch(l.id, { alert_enabled: v })} />
                   </td>
                 </tr>
               )

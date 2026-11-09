@@ -7,6 +7,8 @@ import { letterErrorText, useI18n } from '../lib/i18n'
 import type { Address, Category, Letter } from '../lib/types'
 import { CATEGORIES, catLabel, dueLabel, formatMoney, letterSummary, letterTitle } from '../lib/labels'
 import { AddressTag } from './DashboardPage'
+import { Switch } from '../components/Switch'
+import { SkeletonList } from '../components/Skeleton'
 
 export default function LetterDetailPage() {
   const { id } = useParams()
@@ -105,7 +107,7 @@ export default function LetterDetailPage() {
   }
 
   if (notFound) return <div className="card"><p className="error">{t('detail.notFound')}</p><Link to="/">{t('detail.back')}</Link></div>
-  if (!letter) return <p className="muted">{t('common.loading')}</p>
+  if (!letter) return <SkeletonList rows={2} />
 
   const analyzing = letter.status === 'pending' || letter.status === 'processing'
   const warn = letter.status === 'done' && letter.recipient_is_family === false
@@ -113,7 +115,7 @@ export default function LetterDetailPage() {
 
   return (
     <div className="stack">
-      <Link to="/">{t('detail.back')}</Link>
+      <Link to="/" className="backlink">{t('detail.back')}</Link>
 
       {letter.is_suspicious && <div className="card warnbox"><b>{t('detail.suspicious')}</b></div>}
 
@@ -146,7 +148,7 @@ export default function LetterDetailPage() {
         </div>
       )}
 
-      {analyzing && <div className="card">{t('detail.analyzing')}</div>}
+      {analyzing && <div className="card"><span className="shimmer-text">{t('detail.analyzing')}</span></div>}
       {letter.status === 'failed' && (
         <div className="card warnbox">
           <p className="error">{t('detail.failed', { msg: letterErrorText(t, letter.error) })}</p>
@@ -161,7 +163,7 @@ export default function LetterDetailPage() {
             onChange={(e) => setTitleDraft(e.target.value)} onBlur={saveTitle} />
           <button className={`star big ${letter.is_important ? 'on' : ''}`} aria-label={t('letter.markImportant')}
             onClick={() => patch({ is_important: !letter.is_important })}>
-            {letter.is_important ? '★' : '☆'}
+            <span key={String(letter.is_important)} className="star-glyph">{letter.is_important ? '★' : '☆'}</span>
           </button>
         </div>
         {letter.status === 'done' && !titleDraft && <span className="muted small">{letterTitle(t, lang, letter)}</span>}
@@ -188,15 +190,15 @@ export default function LetterDetailPage() {
           {letter.amount_due != null && (<><dt>{t('detail.amount')}</dt><dd>{formatMoney(lang, letter.amount_due, letter.currency)}</dd></>)}
         </dl>
 
-        <div className="row wrap">
-          <label className="check">
-            <span className="switch"><input type="checkbox" checked={letter.alert_enabled} onChange={(e) => patch({ alert_enabled: e.target.checked })} /><span /></span>
-            {t('detail.alert')}
-          </label>
-          <label className="check">
-            <input type="checkbox" checked={letter.is_done} onChange={(e) => patch({ is_done: e.target.checked })} />
-            {t('detail.done')}
-          </label>
+        <div className="settings">
+          <div className="setting-row">
+            <span>{t('detail.alert')}</span>
+            <Switch checked={letter.alert_enabled} label={t('detail.alert')} onChange={(v) => patch({ alert_enabled: v })} />
+          </div>
+          <div className="setting-row">
+            <span>{t('detail.done')}</span>
+            <Switch checked={letter.is_done} label={t('detail.done')} onChange={(v) => patch({ is_done: v })} />
+          </div>
         </div>
       </section>
 
